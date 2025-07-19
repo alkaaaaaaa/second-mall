@@ -12,7 +12,7 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://localhost:3306/ecommerce?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai
     username: root
-    password: 123456
+    password: 
     
   # Redis配置
   data:
@@ -35,21 +35,12 @@ spring:
       max-file-size: 10MB
       max-request-size: 10MB
 
-# MyBatis Plus配置
-mybatis-plus:
+# MyBatis配置
+mybatis:
   configuration:
     log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
     map-underscore-to-camel-case: true
-  global-config:
-    db-config:
-      id-type: ASSIGN_ID
-      logic-delete-field: deleted
-      logic-delete-value: 1
-      logic-not-delete-value: 0
-      insert-strategy: NOT_NULL
-      update-strategy: NOT_NULL
-      select-strategy: NOT_EMPTY
-  mapper-locations: classpath*:/mapper/*.xml
+  type-aliases-package: com.example.ecommerce.entity
 
 # JWT配置
 jwt:
@@ -61,7 +52,7 @@ jwt:
 logging:
   level:
     com.example.ecommerce: debug
-    com.baomidou.mybatisplus: debug
+    org.apache.ibatis: debug
   pattern:
     console: '%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n'
 

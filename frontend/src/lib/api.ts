@@ -29,7 +29,7 @@ api.interceptors.request.use(
 
 // 响应拦截器
 api.interceptors.response.use(
-  (response: AxiosResponse<ApiResponse<any>>) => {
+  (response: AxiosResponse<ApiResponse<unknown>>) => {
     // 统一处理响应数据
     const { data } = response;
     if (data.code === 200) {
@@ -57,13 +57,13 @@ api.interceptors.response.use(
 
 // API方法封装
 export const apiClient = {
-  get: <T>(url: string, params?: any): Promise<AxiosResponse<ApiResponse<T>>> =>
+  get: <T>(url: string, params?: Record<string, unknown>): Promise<AxiosResponse<ApiResponse<T>>> =>
     api.get(url, { params }),
   
-  post: <T>(url: string, data?: any): Promise<AxiosResponse<ApiResponse<T>>> =>
+  post: <T>(url: string, data?: unknown): Promise<AxiosResponse<ApiResponse<T>>> =>
     api.post(url, data),
   
-  put: <T>(url: string, data?: any): Promise<AxiosResponse<ApiResponse<T>>> =>
+  put: <T>(url: string, data?: unknown): Promise<AxiosResponse<ApiResponse<T>>> =>
     api.put(url, data),
   
   delete: <T>(url: string): Promise<AxiosResponse<ApiResponse<T>>> =>

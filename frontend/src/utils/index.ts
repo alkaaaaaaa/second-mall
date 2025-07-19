@@ -93,7 +93,7 @@ export function generateRandomString(length: number): string {
 }
 
 // 防抖函数
-export function debounce<T extends (...args: any[]) => any>(
+export function debounce<T extends (...args: unknown[]) => unknown>(
   func: T,
   wait: number
 ): (...args: Parameters<T>) => void {
@@ -111,7 +111,7 @@ export function debounce<T extends (...args: any[]) => any>(
 }
 
 // 节流函数
-export function throttle<T extends (...args: any[]) => any>(
+export function throttle<T extends (...args: unknown[]) => unknown>(
   func: T,
   limit: number
 ): (...args: Parameters<T>) => void {
@@ -143,7 +143,7 @@ export function deepClone<T>(obj: T): T {
   if (typeof obj === 'object') {
     const copy = {} as T;
     Object.keys(obj).forEach(key => {
-      (copy as any)[key] = deepClone((obj as any)[key]);
+      (copy as Record<string, unknown>)[key] = deepClone((obj as Record<string, unknown>)[key]);
     });
     return copy;
   }

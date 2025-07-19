@@ -14,13 +14,14 @@ interface AuthActions {
   logout: () => void;
   setUser: (user: User) => void;
   setLoading: (loading: boolean) => void;
+  initializeAuth: () => void;
 }
 
 type AuthStore = AuthState & AuthActions;
 
 export const useAuthStore = create<AuthStore>()(
   persist(
-    (set, get) => ({
+    (set, _get) => ({
       // 状态
       user: null,
       token: null,
@@ -35,9 +36,10 @@ export const useAuthStore = create<AuthStore>()(
           isAuthenticated: true 
         });
         
-        // 将token保存到localStorage
+        // 将token和用户信息保存到localStorage
         if (typeof window !== 'undefined') {
           localStorage.setItem('token', token);
+          localStorage.setItem('user', JSON.stringify(user));
         }
       },
 
@@ -61,6 +63,36 @@ export const useAuthStore = create<AuthStore>()(
 
       setLoading: (loading: boolean) => {
         set({ isLoading: loading });
+      },
+
+      initializeAuth: () => {
+        set({ isLoading: true });
+        
+        // 检查本地存储中的认证信息
+        if (typeof window !== 'undefined') {
+          const token = localStorage.getItem('token');
+          const userJson = localStorage.getItem('user');
+          
+          if (token && userJson) {
+            try {
+              const user = JSON.parse(userJson);
+              set({
+                token,
+                user,
+                isAuthenticated: true,
+                isLoading: false
+              });
+              return;
+            } catch (error) {
+              // JSON解析错误，清除无效数据
+              localStorage.removeItem('token');
+              localStorage.removeItem('user');
+            }
+          }
+        }
+        
+        // 如果没有有效的认证信息，设置为未登录状态
+        set({ isLoading: false });
       },
     }),
     {
