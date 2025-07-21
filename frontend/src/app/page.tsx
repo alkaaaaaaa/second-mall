@@ -4,75 +4,11 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import ProductCard from '@/components/product/ProductCard';
 import { Button } from '@/components/ui/button';
+import productService from '@/lib/services/productService';
 import type { Product, Category } from '@/types';
+// 轮播图数据（可以保留为静态数据，或将来从API获取）
 
-// 模拟数据
-const featuredProducts: Product[] = [
-  {
-    id: 1,
-    name: 'iPhone 15 Pro Max',
-    description: '强悍的 A17 Pro 芯片。超长电池续航。采用钛金属设计。',
-    price: 9999,
-    originalPrice: 10999,
-    stock: 50,
-    images: ['https://picsum.photos/400/400?random=1'],
-    categoryId: 1,
-    brand: 'Apple',
-    status: 'active',
-    createdAt: '2024-01-01',
-    updatedAt: '2024-01-01',
-  },
-  {
-    id: 2,
-    name: 'MacBook Pro 14英寸',
-    description: '搭载 M3 芯片的 MacBook Pro，性能提升显著。',
-    price: 14999,
-    originalPrice: 15999,
-    stock: 30,
-    images: ['https://picsum.photos/400/400?random=2'],
-    categoryId: 2,
-    brand: 'Apple',
-    status: 'active',
-    createdAt: '2024-01-01',
-    updatedAt: '2024-01-01',
-  },
-  {
-    id: 3,
-    name: 'AirPods Pro',
-    description: '主动降噪，沉浸式音效体验。',
-    price: 1999,
-    stock: 100,
-    images: ['https://picsum.photos/400/400?random=3'],
-    categoryId: 3,
-    brand: 'Apple',
-    status: 'active',
-    createdAt: '2024-01-01',
-    updatedAt: '2024-01-01',
-  },
-  {
-    id: 4,
-    name: 'iPad Air',
-    description: '轻薄设计，强大性能，适合创作和娱乐。',
-    price: 4399,
-    originalPrice: 4799,
-    stock: 25,
-    images: ['https://picsum.photos/400/400?random=4'],
-    categoryId: 4,
-    brand: 'Apple',
-    status: 'active',
-    createdAt: '2024-01-01',
-    updatedAt: '2024-01-01',
-  },
-];
-
-const categories: Category[] = [
-  { id: 1, name: '手机', description: '智能手机', createdAt: '2024-01-01', updatedAt: '2024-01-01' },
-  { id: 2, name: '电脑', description: '笔记本电脑', createdAt: '2024-01-01', updatedAt: '2024-01-01' },
-  { id: 3, name: '耳机', description: '音频设备', createdAt: '2024-01-01', updatedAt: '2024-01-01' },
-  { id: 4, name: '平板', description: '平板电脑', createdAt: '2024-01-01', updatedAt: '2024-01-01' },
-  { id: 5, name: '智能手表', description: '可穿戴设备', createdAt: '2024-01-01', updatedAt: '2024-01-01' },
-  { id: 6, name: '家电', description: '智能家电', createdAt: '2024-01-01', updatedAt: '2024-01-01' },
-];
+// 轮播图数据（保留为静态数据）
 
 const banners = [
   { id: 1, image: 'https://picsum.photos/1200/400?random=10', title: '新品上市', subtitle: '限时优惠' },
@@ -81,14 +17,46 @@ const banners = [
 ];
 
 export default function Home() {
+  // 状态定义
+  const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [currentBanner, setCurrentBanner] = useState(0);
 
   useEffect(() => {
+    // 自动轮播定时器
     const timer = setInterval(() => {
       setCurrentBanner((prev) => (prev + 1) % banners.length);
     }, 5000);
-
+    
     return () => clearInterval(timer);
+  }, []);
+  
+  useEffect(() => {
+    // 获取首页数据
+    const fetchHomePageData = async () => {
+      setLoading(true);
+      setError(null);
+      
+      try {
+        // 获取热销商品
+        const featuredData = await productService.getFeaturedProducts();
+        console.log('获取到的热销商品数据:', featuredData);
+        setFeaturedProducts(featuredData?.records || []);
+        
+        // 获取分类列表
+        const categoriesData = await productService.getCategories();
+        setCategories(categoriesData);
+      } catch (err) {
+        console.error('获取首页数据失败', err);
+        setError('无法加载首页数据，请刷新页面重试');
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchHomePageData();
   }, []);
 
   return (
@@ -140,22 +108,40 @@ export default function Home() {
       <section className="py-8 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="text-2xl font-bold text-gray-900 mb-6">商品分类</h2>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-            {categories.map((category) => (
-              <Link
-                key={category.id}
-                href={`/products?category=${category.id}`}
-                className="group"
+          
+          {loading && categories.length === 0 ? (
+            <div className="flex justify-center py-10">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+            </div>
+          ) : error ? (
+            <div className="text-center py-10 text-red-500">
+              <p>{error}</p>
+              <Button 
+                variant="outline" 
+                className="mt-4" 
+                onClick={() => window.location.reload()}
               >
-                <div className="bg-gray-100 rounded-lg p-6 text-center hover:bg-gray-200 transition-colors">
-                  <div className="text-4xl mb-2">📱</div>
-                  <h3 className="font-medium text-gray-900 group-hover:text-blue-600">
-                    {category.name}
-                  </h3>
-                </div>
-              </Link>
-            ))}
-          </div>
+                重新加载
+              </Button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+              {categories.map((category) => (
+                <Link
+                  key={category.id}
+                  href={`/products?category=${category.id}`}
+                  className="group"
+                >
+                  <div className="bg-gray-100 rounded-lg p-6 text-center hover:bg-gray-200 transition-colors">
+                    <div className="text-4xl mb-2">📱</div>
+                    <h3 className="font-medium text-gray-900 group-hover:text-blue-600">
+                      {category.name}
+                    </h3>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
@@ -171,11 +157,32 @@ export default function Home() {
             </Link>
           </div>
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {featuredProducts.map((product) => (
-              <ProductCard key={product.id} product={product} />
-            ))}
-          </div>
+          {loading && featuredProducts.length === 0 ? (
+            <div className="flex justify-center py-20">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+            </div>
+          ) : error ? (
+            <div className="text-center py-20 text-red-500">
+              <p>{error}</p>
+              <Button 
+                variant="outline" 
+                className="mt-4" 
+                onClick={() => window.location.reload()}
+              >
+                重新加载
+              </Button>
+            </div>
+          ) : featuredProducts.length === 0 ? (
+            <div className="text-center py-20 text-gray-500">
+              <p>暂无热销商品</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {featuredProducts.map((product) => (
+                <ProductCard key={product.id} product={product} />
+              ))}
+            </div>
+          )}
         </div>
       </section>
 

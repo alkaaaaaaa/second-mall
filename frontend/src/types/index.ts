@@ -13,17 +13,20 @@ export interface User {
 export interface Product {
   id: number;
   name: string;
-  description: string;
+  description?: string;
   price: number;
   originalPrice?: number;
   stock: number;
-  images: string[];
+  images?: string[];
+  mainImage?: string;
   categoryId: number;
+  categoryName?: string;
   category?: Category;
   brand?: string;
-  status: 'active' | 'inactive';
-  createdAt: string;
-  updatedAt: string;
+  status: number;
+  salesCount?: number;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 // 商品分类类型
@@ -92,7 +95,7 @@ export interface ApiResponse<T> {
 
 // 分页响应类型
 export interface PageResponse<T> {
-  list: T[];
+  records: T[];
   total: number;
   page: number;
   size: number;

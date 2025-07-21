@@ -5,128 +5,9 @@ import { useSearchParams } from 'next/navigation';
 import ProductCard from '@/components/product/ProductCard';
 import { Button } from '@/components/ui/button';
 import type { Product, Category } from '@/types';
+import productService from '@/lib/services/productService';
 
-// 模拟数据
-const allProducts: Product[] = [
-  {
-    id: 1,
-    name: 'iPhone 15 Pro Max',
-    description: '强悍的 A17 Pro 芯片。超长电池续航。采用钛金属设计。',
-    price: 9999,
-    originalPrice: 10999,
-    stock: 50,
-    images: ['https://picsum.photos/400/400?random=1'],
-    categoryId: 1,
-    brand: 'Apple',
-    status: 'active',
-    createdAt: '2024-01-01',
-    updatedAt: '2024-01-01',
-  },
-  {
-    id: 2,
-    name: 'MacBook Pro 14英寸',
-    description: '搭载 M3 芯片的 MacBook Pro，性能提升显著。',
-    price: 14999,
-    originalPrice: 15999,
-    stock: 30,
-    images: ['https://picsum.photos/400/400?random=2'],
-    categoryId: 2,
-    brand: 'Apple',
-    status: 'active',
-    createdAt: '2024-01-01',
-    updatedAt: '2024-01-01',
-  },
-  {
-    id: 3,
-    name: 'AirPods Pro',
-    description: '主动降噪，沉浸式音效体验。',
-    price: 1999,
-    stock: 100,
-    images: ['https://picsum.photos/400/400?random=3'],
-    categoryId: 3,
-    brand: 'Apple',
-    status: 'active',
-    createdAt: '2024-01-01',
-    updatedAt: '2024-01-01',
-  },
-  {
-    id: 4,
-    name: 'iPad Air',
-    description: '轻薄设计，强大性能，适合创作和娱乐。',
-    price: 4399,
-    originalPrice: 4799,
-    stock: 25,
-    images: ['https://picsum.photos/400/400?random=4'],
-    categoryId: 4,
-    brand: 'Apple',
-    status: 'active',
-    createdAt: '2024-01-01',
-    updatedAt: '2024-01-01',
-  },
-  {
-    id: 5,
-    name: 'Samsung Galaxy S24',
-    description: '旗舰级拍照体验，AI智能助手。',
-    price: 7999,
-    stock: 40,
-    images: ['https://picsum.photos/400/400?random=5'],
-    categoryId: 1,
-    brand: 'Samsung',
-    status: 'active',
-    createdAt: '2024-01-01',
-    updatedAt: '2024-01-01',
-  },
-  {
-    id: 6,
-    name: 'Dell XPS 13',
-    description: '轻薄便携，商务办公首选。',
-    price: 8999,
-    originalPrice: 9999,
-    stock: 20,
-    images: ['https://picsum.photos/400/400?random=6'],
-    categoryId: 2,
-    brand: 'Dell',
-    status: 'active',
-    createdAt: '2024-01-01',
-    updatedAt: '2024-01-01',
-  },
-  {
-    id: 7,
-    name: 'Sony WH-1000XM5',
-    description: '业界领先的降噪技术，高品质音效。',
-    price: 2399,
-    stock: 60,
-    images: ['https://picsum.photos/400/400?random=7'],
-    categoryId: 3,
-    brand: 'Sony',
-    status: 'active',
-    createdAt: '2024-01-01',
-    updatedAt: '2024-01-01',
-  },
-  {
-    id: 8,
-    name: 'Surface Pro 9',
-    description: '二合一设计，工作娱乐两不误。',
-    price: 7599,
-    stock: 35,
-    images: ['https://picsum.photos/400/400?random=8'],
-    categoryId: 4,
-    brand: 'Microsoft',
-    status: 'active',
-    createdAt: '2024-01-01',
-    updatedAt: '2024-01-01',
-  },
-];
-
-const categories: Category[] = [
-  { id: 0, name: '全部', description: '所有商品', createdAt: '2024-01-01', updatedAt: '2024-01-01' },
-  { id: 1, name: '手机', description: '智能手机', createdAt: '2024-01-01', updatedAt: '2024-01-01' },
-  { id: 2, name: '电脑', description: '笔记本电脑', createdAt: '2024-01-01', updatedAt: '2024-01-01' },
-  { id: 3, name: '耳机', description: '音频设备', createdAt: '2024-01-01', updatedAt: '2024-01-01' },
-  { id: 4, name: '平板', description: '平板电脑', createdAt: '2024-01-01', updatedAt: '2024-01-01' },
-];
-
-const brands = ['全部', 'Apple', 'Samsung', 'Dell', 'Sony', 'Microsoft'];
+// 排序选项
 const sortOptions = [
   { value: 'default', label: '默认排序' },
   { value: 'price-asc', label: '价格从低到高' },
@@ -134,173 +15,234 @@ const sortOptions = [
   { value: 'name', label: '按名称排序' },
 ];
 
+// 默认品牌列表 - 将根据实际数据动态生成
+const defaultBrands = ['全部', 'Apple', 'Samsung', 'Dell', 'Sony', 'Microsoft'];
+
 function ProductsPageContent() {
   const searchParams = useSearchParams();
-  const [filteredProducts, setFilteredProducts] = useState<Product[]>(allProducts);
-  const [selectedCategory, setSelectedCategory] = useState<number>(0);
-  const [selectedBrand, setSelectedBrand] = useState<string>('全部');
-  const [sortBy, setSortBy] = useState<string>('default');
-  const [priceRange, setPriceRange] = useState<[number, number]>([0, 20000]);
-  const [currentPage, setCurrentPage] = useState<number>(1);
-  const [searchQuery, setSearchQuery] = useState<string>('');
   
-  const productsPerPage = 8;
+  // 状态管理
+  const [products, setProducts] = useState<Product[]>([]);
+  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [brands, setBrands] = useState<string[]>(defaultBrands);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string>('');
 
-  // 从URL参数中获取分类
+  // 从URL参数中获取搜索条件
+  const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '');
+  const [selectedCategory, setSelectedCategory] = useState(searchParams.get('category') ? parseInt(searchParams.get('category') || '0') : 0);
+  const [selectedBrand, setSelectedBrand] = useState(searchParams.get('brand') || '全部');
+  
+  // 筛选和排序
+  const [priceRange, setPriceRange] = useState([0, 20000]);
+  const [sortBy, setSortBy] = useState('default');
+  
+  // 分页
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(12);
+  const [totalItems, setTotalItems] = useState(0);
+
+  // 获取商品和分类数据
   useEffect(() => {
-    const category = searchParams.get('category');
-    if (category) {
-      setSelectedCategory(parseInt(category));
-    }
-  }, [searchParams]);
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        // 构建查询参数
+        const query: any = {
+          page: currentPage,
+          size: itemsPerPage
+        };
+        
+        if (selectedCategory > 0) {
+          query.categoryId = selectedCategory;
+        }
+        
+        if (searchTerm) {
+          query.name = searchTerm;
+        }
+        
+        if (sortBy === 'price-asc') {
+          query.sortBy = 'price';
+          query.sortOrder = 'asc';
+        } else if (sortBy === 'price-desc') {
+          query.sortBy = 'price';
+          query.sortOrder = 'desc';
+        } else if (sortBy === 'name') {
+          query.sortBy = 'name';
+          query.sortOrder = 'asc';
+        }
 
-  // 筛选和排序产品
+        // 获取商品数据
+        const productsData = await productService.getProducts(query);
+        setProducts(productsData.list);
+        setFilteredProducts(productsData.list);
+        setTotalItems(productsData.total);
+        
+        // 获取分类数据
+        const categoriesData = await productService.getCategories();
+        // 添加"全部"选项到分类列表
+        setCategories([{ id: 0, name: '全部', description: '所有商品', createdAt: '', updatedAt: '' }, ...categoriesData]);
+        
+        // 从商品数据中提取唯一的品牌列表
+        const uniqueBrands = ['全部', ...new Set(productsData.list.map((p: Product) => p.brand).filter(Boolean))];
+        setBrands(uniqueBrands);
+      } catch (err) {
+        console.error('获取数据失败', err);
+        setError('获取数据失败，请稍后再试');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [currentPage, itemsPerPage, selectedCategory, searchTerm, sortBy]);
+  
+  // 根据其他筛选条件进一步过滤商品（品牌和价格）
   useEffect(() => {
-    let filtered = [...allProducts];
-
-    // 按分类筛选
-    if (selectedCategory !== 0) {
-      filtered = filtered.filter(product => product.categoryId === selectedCategory);
-    }
-
+    // 品牌和价格筛选在前端进行，其他筛选在API调用时处理
+    let result = [...products];
+    
     // 按品牌筛选
     if (selectedBrand !== '全部') {
-      filtered = filtered.filter(product => product.brand === selectedBrand);
+      result = result.filter(p => p.brand === selectedBrand);
     }
-
-    // 按价格筛选
-    filtered = filtered.filter(product => 
-      product.price >= priceRange[0] && product.price <= priceRange[1]
-    );
-
-    // 按搜索词筛选
-    if (searchQuery) {
-      filtered = filtered.filter(product =>
-        product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        product.description.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-    }
-
-    // 排序
-    switch (sortBy) {
-      case 'price-asc':
-        filtered.sort((a, b) => a.price - b.price);
-        break;
-      case 'price-desc':
-        filtered.sort((a, b) => b.price - a.price);
-        break;
-      case 'name':
-        filtered.sort((a, b) => a.name.localeCompare(b.name));
-        break;
-      default:
-        // 默认排序保持原有顺序
-        break;
-    }
-
-    setFilteredProducts(filtered);
-    setCurrentPage(1); // 重置到第一页
-  }, [selectedCategory, selectedBrand, sortBy, priceRange, searchQuery]);
-
-  // 分页计算
-  const totalPages = Math.ceil(filteredProducts.length / productsPerPage);
-  const currentProducts = filteredProducts.slice(
-    (currentPage - 1) * productsPerPage,
-    currentPage * productsPerPage
-  );
-
+    
+    // 按价格范围筛选
+    result = result.filter(p => p.price >= priceRange[0] && p.price <= priceRange[1]);
+    
+    setFilteredProducts(result);
+  }, [products, selectedBrand, priceRange]);
+  
+  // 计算总页数
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  
+  // 搜索表单提交
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
+    // 重置为第一页
+    setCurrentPage(1);
   };
 
+  // 处理错误显示
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="bg-white rounded-lg shadow-md p-8 max-w-md w-full">
+          <div className="text-red-500 text-6xl mb-4 text-center">⚠️</div>
+          <h3 className="text-lg font-semibold text-gray-900 mb-2 text-center">数据加载失败</h3>
+          <p className="text-gray-600 text-center mb-4">{error}</p>
+          <div className="flex justify-center">
+            <Button onClick={() => window.location.reload()}>重试</Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="min-h-screen bg-gray-50 pt-20">
+      <div className="container mx-auto px-4 py-8">
+        {/* 页面标题 */}
+        <div className="mb-8">
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-800 mb-2">浏览商品</h1>
+          <p className="text-gray-600">发现最新的科技产品和热门好物</p>
+        </div>
+        
+        {/* 搜索栏 */}
+        <div className="bg-white rounded-lg shadow-md p-4 mb-8">
+          <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-4">
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="搜索商品名称、描述..."
+              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+            />
+            <Button type="submit" className="w-full sm:w-auto">
+              搜索
+            </Button>
+          </form>
+        </div>
+        
+        {/* 主体内容 */}
         <div className="flex flex-col lg:flex-row gap-8">
-          {/* 侧边栏筛选 */}
-          <div className="lg:w-64 flex-shrink-0">
-            <div className="bg-white rounded-lg shadow-md p-6 space-y-6">
-              {/* 搜索 */}
-              <div>
-                <h3 className="font-semibold mb-3">搜索商品</h3>
-                <form onSubmit={handleSearch}>
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="输入商品名称..."
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </form>
-              </div>
-
-              {/* 商品分类 */}
-              <div>
-                <h3 className="font-semibold mb-3">商品分类</h3>
-                <div className="space-y-2">
-                  {categories.map((category) => (
-                    <label key={category.id} className="flex items-center">
-                      <input
-                        type="radio"
-                        name="category"
-                        checked={selectedCategory === category.id}
-                        onChange={() => setSelectedCategory(category.id)}
-                        className="mr-2"
-                      />
-                      <span className="text-sm">{category.name}</span>
-                    </label>
-                  ))}
+          {/* 左侧过滤栏 */}
+          <div className="w-full lg:w-64 shrink-0">
+            <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">分类</h3>
+              <ul className="space-y-2">
+                {categories.map((category) => (
+                  <li key={category.id}>
+                    <button
+                      className={`w-full text-left px-2 py-1.5 rounded ${
+                        selectedCategory === category.id ? 'bg-blue-500 text-white' : 'text-gray-600 hover:bg-gray-100'
+                      }`}
+                      onClick={() => {
+                        setSelectedCategory(category.id);
+                        setCurrentPage(1);
+                      }}
+                    >
+                      {category.name}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            
+            <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">品牌</h3>
+              <ul className="space-y-2">
+                {brands.map((brand) => (
+                  <li key={brand}>
+                    <button
+                      className={`w-full text-left px-2 py-1.5 rounded ${
+                        selectedBrand === brand ? 'bg-blue-500 text-white' : 'text-gray-600 hover:bg-gray-100'
+                      }`}
+                      onClick={() => {
+                        setSelectedBrand(brand);
+                        setCurrentPage(1);
+                      }}
+                    >
+                      {brand}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">价格范围</h3>
+              <div className="space-y-4">
+                <div className="flex justify-between items-center text-sm text-gray-600">
+                  <span>￥{priceRange[0]}</span>
+                  <span>￥{priceRange[1]}</span>
                 </div>
-              </div>
-
-              {/* 品牌筛选 */}
-              <div>
-                <h3 className="font-semibold mb-3">品牌</h3>
-                <div className="space-y-2">
-                  {brands.map((brand) => (
-                    <label key={brand} className="flex items-center">
-                      <input
-                        type="radio"
-                        name="brand"
-                        checked={selectedBrand === brand}
-                        onChange={() => setSelectedBrand(brand)}
-                        className="mr-2"
-                      />
-                      <span className="text-sm">{brand}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              {/* 价格区间 */}
-              <div>
-                <h3 className="font-semibold mb-3">价格区间</h3>
-                <div className="space-y-3">
-                  <div className="flex items-center space-x-2">
+                <div className="flex gap-4 flex-col">
+                  <div>
+                    <label className="block text-sm text-gray-600 mb-1">最低价格</label>
                     <input
-                      type="number"
+                      type="range"
+                      min="0"
+                      max="20000"
+                      step="500"
                       value={priceRange[0]}
-                      onChange={(e) => setPriceRange([parseInt(e.target.value) || 0, priceRange[1]])}
-                      placeholder="最低价"
-                      className="w-20 px-2 py-1 border border-gray-300 rounded text-sm"
-                    />
-                    <span>-</span>
-                    <input
-                      type="number"
-                      value={priceRange[1]}
-                      onChange={(e) => setPriceRange([priceRange[0], parseInt(e.target.value) || 20000])}
-                      placeholder="最高价"
-                      className="w-20 px-2 py-1 border border-gray-300 rounded text-sm"
+                      onChange={(e) => setPriceRange([parseInt(e.target.value), priceRange[1]])}
+                      className="w-full"
                     />
                   </div>
-                  <input
-                    type="range"
-                    min="0"
-                    max="20000"
-                    step="100"
-                    value={priceRange[1]}
-                    onChange={(e) => setPriceRange([priceRange[0], parseInt(e.target.value)])}
-                    className="w-full"
-                  />
+                  <div>
+                    <label className="block text-sm text-gray-600 mb-1">最高价格</label>
+                    <input
+                      type="range"
+                      min="0"
+                      max="20000"
+                      step="500"
+                      value={priceRange[1]}
+                      onChange={(e) => setPriceRange([priceRange[0], parseInt(e.target.value)])}
+                      className="w-full"
+                    />
+                  </div>
                 </div>
               </div>
             </div>
@@ -312,7 +254,7 @@ function ProductsPageContent() {
             <div className="bg-white rounded-lg shadow-md p-4 mb-6">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0">
                 <div className="text-sm text-gray-600">
-                  共找到 <span className="font-semibold">{filteredProducts.length}</span> 件商品
+                  共找到 <span className="font-semibold">{totalItems}</span> 件商品
                 </div>
                 
                 <div className="flex items-center space-x-4">
@@ -333,9 +275,14 @@ function ProductsPageContent() {
             </div>
 
             {/* 商品网格 */}
-            {currentProducts.length > 0 ? (
+            {loading ? (
+              <div className="bg-white rounded-lg shadow-md p-12 text-center">
+                <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-500 mx-auto mb-4"></div>
+                <p className="text-gray-600">正在加载商品信息...</p>
+              </div>
+            ) : filteredProducts.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
-                {currentProducts.map((product) => (
+                {filteredProducts.map((product) => (
                   <ProductCard key={product.id} product={product} />
                 ))}
               </div>
@@ -360,16 +307,29 @@ function ProductsPageContent() {
                     上一页
                   </Button>
                   
-                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                    <Button
-                      key={page}
-                      variant={page === currentPage ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => setCurrentPage(page)}
-                    >
-                      {page}
-                    </Button>
-                  ))}
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    // 显示当前页附近的页码
+                    let pageToShow;
+                    if (totalPages <= 5) {
+                      pageToShow = i + 1;
+                    } else if (currentPage <= 3) {
+                      pageToShow = i + 1;
+                    } else if (currentPage >= totalPages - 2) {
+                      pageToShow = totalPages - 4 + i;
+                    } else {
+                      pageToShow = currentPage - 2 + i;
+                    }
+                    return (
+                      <Button
+                        key={pageToShow}
+                        variant={pageToShow === currentPage ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setCurrentPage(pageToShow)}
+                      >
+                        {pageToShow}
+                      </Button>
+                    );
+                  })}
                   
                   <Button
                     variant="outline"
@@ -402,4 +362,4 @@ export default function ProductsPage() {
       <ProductsPageContent />
     </Suspense>
   );
-} 
+}
