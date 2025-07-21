@@ -67,8 +67,11 @@ public class ProductDTO {
         private Long categoryId;
         private String categoryName;
         private BigDecimal price;
+        private BigDecimal originalPrice;
         private Integer stock;
         private String mainImage;
+        private List<String> images; // 商品图片列表
+        private String brand;
         private Integer status;
         private Integer salesCount;
         private LocalDateTime createdAt;
@@ -82,11 +85,14 @@ public class ProductDTO {
     public static class ProductListResponse {
         private Long id;
         private String name;
+        private String description;
         private Long categoryId;
         private String categoryName;
         private BigDecimal price;
+        private BigDecimal originalPrice;
         private Integer stock;
         private String mainImage;
+        private String brand;
         private Integer status;
         private Integer salesCount;
     }

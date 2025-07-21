@@ -15,7 +15,8 @@ public interface ProductMapper {
      * 分页查询商品（带分类名称）
      */
     @Select("<script>" +
-            "SELECT p.*, c.name as category_name FROM product p " +
+            "SELECT p.id, p.name, p.description, p.category_id, c.name as category_name, " +
+            "p.price, p.original_price, p.stock, p.main_image, p.brand, p.status, p.sales_count FROM product p " +
             "LEFT JOIN category c ON p.category_id = c.id " +
             "WHERE p.is_deleted = 0 " +
             "<if test='query.name != null and query.name != &quot;&quot;'>" +
@@ -50,7 +51,9 @@ public interface ProductMapper {
     /**
      * 根据ID查询商品详情（带分类名称）
      */
-    @Select("SELECT p.*, c.name as category_name FROM product p " +
+    @Select("SELECT p.id, p.name, p.description, p.category_id, c.name as category_name, " +
+            "p.price, p.original_price, p.stock, p.main_image, p.brand, p.status, " +
+            "p.sales_count, p.created_at, p.updated_at FROM product p " +
             "LEFT JOIN category c ON p.category_id = c.id " +
             "WHERE p.id = #{id} AND p.is_deleted = 0")
     ProductDTO.ProductResponse findProductDetailById(@Param("id") Long id);

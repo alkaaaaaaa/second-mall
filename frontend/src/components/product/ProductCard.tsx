@@ -26,9 +26,9 @@ export default function ProductCard({ product }: ProductCardProps) {
     <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 overflow-hidden">
       <Link href={`/products/${product.id}`}>
         <div className="relative aspect-square">
-          {product.images && product.images.length > 0 ? (
+          {(product.images && product.images.length > 0) || product.mainImage ? (
             <Image
-              src={product.images[0]}
+              src={(product.images && product.images[0]) || product.mainImage || 'https://picsum.photos/400/400?random=default'}
               alt={product.name}
               fill
               className="object-cover"

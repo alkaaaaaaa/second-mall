@@ -48,6 +48,12 @@ jwt:
   expiration: 86400 # 24小时，单位：秒
   refresh-expiration: 604800 # 7天，单位：秒
 
+# 应用自定义配置
+app:
+  upload:
+    dir: ${user.dir}/uploads  # 文件上传保存的目录
+    base-url: http://localhost:8080/api  # 文件访问的基础URL
+
 # 日志配置
 logging:
   level:

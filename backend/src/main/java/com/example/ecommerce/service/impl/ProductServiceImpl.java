@@ -4,10 +4,13 @@ package com.example.ecommerce.service.impl;
 import com.example.ecommerce.dto.ProductDTO;
 import com.example.ecommerce.entity.Category;
 import com.example.ecommerce.entity.Product;
+import com.example.ecommerce.entity.ProductImage;
 import com.example.ecommerce.mapper.CategoryMapper;
 import com.example.ecommerce.mapper.ProductMapper;
+import com.example.ecommerce.mapper.ProductImageMapper;
 import com.example.ecommerce.service.ProductService;
 import java.util.List;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
@@ -24,6 +27,7 @@ public class ProductServiceImpl implements ProductService {
 
     private final ProductMapper productMapper;
     private final CategoryMapper categoryMapper;
+    private final ProductImageMapper productImageMapper;
 
     @Override
     @Transactional
@@ -98,6 +102,14 @@ public class ProductServiceImpl implements ProductService {
         if (product == null) {
             throw new RuntimeException("商品不存在");
         }
+        
+        // 获取商品图片列表
+        List<ProductImage> productImages = productImageMapper.findByProductId(productId);
+        List<String> imageUrls = productImages.stream()
+                .map(ProductImage::getImageUrl)
+                .collect(Collectors.toList());
+        product.setImages(imageUrls);
+        
         return product;
     }
 
